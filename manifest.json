@@ -1,0 +1,34 @@
+{
+  "name": "效率盒 · 笔记与待办",
+  "short_name": "效率盒",
+  "description": "离线优先的笔记与待办应用，支持 Markdown、标签、待办提醒。",
+  "lang": "zh-CN",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#4f46e5",
+  "theme_color": "#4f46e5",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "Icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "Icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

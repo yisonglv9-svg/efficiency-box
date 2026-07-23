@@ -1,0 +1,8 @@
+# Test / temp files
+_test_*
+_verify_*
+_check.*
+_live.*
+_sw.js
+_chk.html
+

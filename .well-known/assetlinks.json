@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.efficiencybox.twa",
+    "sha256_cert_fingerprints": ["52:E3:68:7D:F4:50:42:0A:6A:66:0F:35:93:4F:F5:F7:AE:7D:59:22:2C:C8:5C:C4:1D:73:B4:FC:1F:A3:CB:F4"]
+  }
+}]
