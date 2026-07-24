@@ -7,10 +7,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-<meta name="apple-mobile-web-app-title" content="效率盒" />
+<meta name="apple-mobile-web-app-title" content="Meow" />
 <link rel="manifest" href="manifest.json" />
 <link rel="apple-touch-icon" href="Icon-192.png" />
-<title>效率盒 · 笔记与待办</title>
+<title>Meow · 笔记与待办</title>
 <style>
   :root {
     /* 韩系浅色 (默认) */
@@ -484,7 +484,7 @@
   <header>
     <div class="ico" id="headIco"></div>
     <div class="titles">
-      <span class="h" id="pageTitle">效率盒</span>
+      <span class="h" id="pageTitle">Meow</span>
       <span class="s" id="pageSub">笔记与待办</span>
     </div>
     <div class="spacer"></div>
@@ -517,7 +517,7 @@
 <div class="modal-mask" id="loginMask">
   <div class="login-card">
     <div class="login-logo" id="loginLogo"></div>
-    <div class="login-title">效率盒</div>
+    <div class="login-title">Meow</div>
     <div class="login-sub">本地账号 · 数据独立保存</div>
     <div id="loginForm">
       <input class="field" id="loginName" placeholder="用户名（必填）" autocomplete="username" />
@@ -549,7 +549,7 @@
   <div class="modal-mask hidden" id="aboutModal">
     <div class="modal-card">
       <div class="about-logo">📦</div>
-      <div class="about-name">效率盒</div>
+      <div class="about-name">Meow</div>
       <div class="about-ver" id="aboutVer">v7.0</div>
       <div class="about-desc">单文件离线 PWA · 笔记 / 待办 / 月历<br>数据保存在本机，不上传服务器</div>
       <div class="about-tip">这是网页应用，不是传统 App。<b>更新时无需重新下载</b>——有新版本会自动推送到你的设备，点下面的按钮可立即检查。</div>
@@ -663,7 +663,7 @@
 <!-- Splash -->
 <div class="splash" id="splash">
   <div class="logo" id="splashLogo"></div>
-  <div class="name">效率盒</div>
+  <div class="name">Meow</div>
   <div class="tag">记录 · 规划 · 随身</div>
 </div>
 
@@ -1147,7 +1147,7 @@
     html += setItem(icon("trash"), "清空数据", "删除全部笔记和待办", "clear");
     html += "</div>";
     html += '<div class="set-list">';
-    html += setItem(icon("info"), "关于效率盒", "单文件离线应用 · v7.0", "about");
+    html += setItem(icon("info"), "关于Meow", "单文件离线应用 · v7.0", "about");
     html += "</div>";
     listView().innerHTML = html;
     var acts = {
@@ -1621,7 +1621,7 @@
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
-    a.href = url; a.download = "效率盒备份_" + new Date().toISOString().slice(0, 10) + ".json";
+    a.href = url; a.download = "Meow备份_" + new Date().toISOString().slice(0, 10) + ".json";
     a.click(); URL.revokeObjectURL(url); toast("已导出备份");
   }
   function importData(file) {
