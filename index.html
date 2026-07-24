@@ -165,7 +165,7 @@
   .card {
     background: var(--glass); border: 1px solid var(--border); border-left: 4px solid var(--accent, var(--primary));
     border-radius: var(--radius); padding: 16px 17px; margin-bottom: 13px;
-    box-shadow: var(--shadow-sm); cursor: pointer; position: relative;
+    box-shadow: var(--shadow-sm); cursor: pointer; position: relative; overflow: hidden;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     animation: pop .24s ease both; transition: transform .1s ease, border-color .15s;
   }
@@ -184,11 +184,12 @@
 
   /* Todo */
   .todo-item {
-    display: flex; align-items: flex-start; gap: 13px; background: var(--glass); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 14px 16px; margin-bottom: 11px; box-shadow: var(--shadow-sm); cursor: pointer;
+    position: relative; overflow: hidden; background: var(--glass); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 11px; box-shadow: var(--shadow-sm); cursor: pointer;
     backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     animation: pop .24s ease both; transition: transform .1s ease, border-color .15s;
   }
+  .todo-item .swipe-front { display: flex; align-items: flex-start; gap: 13px; padding: 14px 16px; }
   .todo-item:active { transform: scale(.98); border-color: var(--border-strong); }
   .todo-check {
     width: 23px; height: 23px; border-radius: 50%; border: 2px solid var(--border-strong);
@@ -207,6 +208,15 @@
   .due.over { color: var(--danger); font-weight: 600; }
   .todo-del { color: var(--text-soft); background: none; border: none; font-size: 17px; cursor: pointer; padding: 2px 4px; flex-shrink: 0; transition: color .12s; }
   .todo-del:active { color: var(--danger); }
+  /* Swipe to delete (mobile gesture) */
+  .swipe { overflow: hidden; }
+  .swipe-front { position: relative; z-index: 1; transition: transform .22s ease; will-change: transform; touch-action: pan-y; }
+  .card .swipe-front, .todo-item .swipe-front { background: var(--glass); }
+  .swipe-action { position: absolute; top: 0; right: 0; bottom: 0; width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--danger); color: #fff; z-index: 0; border-radius: 0 var(--radius) var(--radius) 0; }
+  .swipe-action .sa-ic { font-size: 18px; line-height: 1; }
+  .swipe-action .sa-tx { font-size: 12px; font-weight: 600; }
+  .swipe-action:active { filter: brightness(.92); }
+  @media (hover: none) and (pointer: coarse) { .todo-del { display: none; } }
   .progress-wrap { background: var(--glass-2); height: 8px; border-radius: 5px; overflow: hidden; margin: 4px 4px 7px; }
   .progress-bar { height: 100%; background: var(--grad); border-radius: 5px; transition: width .35s; }
   .clear-done { display: inline-block; margin: 2px 4px 14px; font-size: 13px; color: var(--text-soft); cursor: pointer; font-weight: 600; }
@@ -987,7 +997,9 @@
   }
 
   function noteCard(n) {
-    return '<div class="card" data-type="note" data-id="' + n.id + '" style="--accent:' + (n.color || COLORS[0]) + '">' +
+    return '<div class="card swipe" data-type="note" data-id="' + n.id + '" style="--accent:' + (n.color || COLORS[0]) + '">' +
+      '<div class="swipe-action" data-act="del"><span class="sa-ic">' + icon("trash") + '</span><span class="sa-tx">删除</span></div>' +
+      '<div class="swipe-front">' +
       (n.pinned ? '<span class="pin-flag">' + icon("pin") + "</span>" : "") +
       "<h3>" + escapeHtml(n.title || "无标题") + "</h3>" +
       '<div class="body">' + md(n.body) + "</div>" +
@@ -996,7 +1008,7 @@
       "<span>🕒 " + fmt(n.updatedAt) + "</span>" +
       (n.folder && n.folder !== "none" ? '<span class="folder-tag">' + icon("folder") + " " + escapeHtml(getFolderName(n.folder)) + "</span>" : "") +
       (n.tags && n.tags.length ? n.tags.map(function (t) { return '<span class="tag">#' + escapeHtml(t) + "</span>"; }).join("") : "") +
-      (n.photo ? '<span class="np-ic">' + icon("camera") + "</span>" : "") + "</div></div>";
+      (n.photo ? '<span class="np-ic">' + icon("camera") + "</span>" : "") + "</div></div></div>";
   }
 
   function renderTodos() {
@@ -1098,7 +1110,9 @@
     var subs = t.subtasks || [];
     var subDone = subs.filter(function (s) { return s.done; }).length;
     var subStr = subs.length ? "✓ " + subDone + "/" + subs.length : "";
-    return '<div class="todo-item' + (t.done ? " done" : "") + '" data-type="todo" data-id="' + t.id + '" draggable="true">' +
+    return '<div class="todo-item swipe' + (t.done ? " done" : "") + '" data-type="todo" data-id="' + t.id + '" draggable="true">' +
+      '<div class="swipe-action" data-act="del"><span class="sa-ic">' + icon("trash") + '</span><span class="sa-tx">删除</span></div>' +
+      '<div class="swipe-front">' +
       '<div class="todo-check">' + (t.done ? "✓" : "") + "</div>" +
       '<div class="todo-main"><div class="todo-text">' + escapeHtml(t.text) + "</div>" +
       '<div class="todo-sub">' +
@@ -1107,7 +1121,7 @@
       (subStr ? "<span>" + subStr + "</span>" : "") +
       (t.tags && t.tags.length ? '<span class="tags">' + t.tags.map(function (x) { return '<span class="tag-chip">' + escapeHtml(x) + "</span>"; }).join("") + "</span>" : "") +
       (t.remind ? "<span>" + icon("bell") + "</span>" : "") + "</div></div>" +
-      '<button class="todo-del">' + icon("trash") + "</button></div>";
+      '<button class="todo-del">' + icon("trash") + "</button></div></div>";
   }
 
   function renderSettings() {
@@ -1174,19 +1188,76 @@
   }
 
   function bindCards() {
+    Array.prototype.forEach.call(document.querySelectorAll(".swipe"), function (el) {
+      bindSwipe(el);
+      var act = el.querySelector(".swipe-action");
+      if (act) act.onclick = function (e) {
+        e.stopPropagation();
+        var id = el.getAttribute("data-id");
+        haptic();
+        if (el.getAttribute("data-type") === "note") deleteNoteById(id); else deleteTodo(id);
+      };
+    });
     Array.prototype.forEach.call(document.querySelectorAll(".card[data-id]"), function (el) {
-      el.onclick = function () { if (el.getAttribute("data-type") === "note") openNote(el.getAttribute("data-id")); };
+      el.onclick = function () {
+        if (el.__swipeOpen) { closeSwipe(el); return; }
+        if (el.__suppressClick) { el.__suppressClick = false; return; }
+        openNote(el.getAttribute("data-id"));
+      };
     });
     Array.prototype.forEach.call(document.querySelectorAll(".todo-item[data-id]"), function (el) {
       var id = el.getAttribute("data-id");
       el.querySelector(".todo-check").onclick = function (e) { e.stopPropagation(); haptic(12); toggleTodo(id); };
       el.querySelector(".todo-del").onclick = function (e) { e.stopPropagation(); haptic(); deleteTodo(id); };
-      el.onclick = function () { openTodo(id); };
+      el.onclick = function () {
+        if (el.__swipeOpen) { closeSwipe(el); return; }
+        if (el.__suppressClick) { el.__suppressClick = false; return; }
+        openTodo(id);
+      };
       el.addEventListener("dragstart", function (e) { if (e.dataTransfer) { e.dataTransfer.setData("text/plain", id); e.dataTransfer.effectAllowed = "move"; } el.classList.add("dragging"); });
       el.addEventListener("dragend", function () { el.classList.remove("dragging"); });
       el.addEventListener("dragover", function (e) { e.preventDefault(); if (e.dataTransfer) e.dataTransfer.dropEffect = "move"; });
       el.addEventListener("drop", function (e) { e.preventDefault(); var from = e.dataTransfer ? e.dataTransfer.getData("text/plain") : ""; if (from && from !== id) reorderTodos(from, id); });
     });
+  }
+  function bindSwipe(el) {
+    if (el.__swipeBound) return; el.__swipeBound = true;
+    var front = el.querySelector(".swipe-front"); if (!front) return;
+    var ACT = 84, startX = 0, startY = 0, base = 0, cur = 0, horiz = null, active = false;
+    el.addEventListener("pointerdown", function (e) {
+      if (e.pointerType && e.pointerType !== "touch") return;
+      active = true; horiz = null; startX = e.clientX; startY = e.clientY; base = el.__swipeOpen ? -ACT : 0;
+      front.style.transition = "none";
+      if (window.__openSwipe && window.__openSwipe !== el) closeSwipe(window.__openSwipe);
+      window.__openSwipe = el;
+    });
+    el.addEventListener("pointermove", function (e) {
+      if (!active) return;
+      var mx = e.clientX - startX, my = e.clientY - startY;
+      if (horiz === null) { if (Math.abs(mx) > 6 || Math.abs(my) > 6) horiz = Math.abs(mx) > Math.abs(my); }
+      if (horiz !== true) return;
+      if (e.cancelable) e.preventDefault();
+      var off = base + mx;
+      if (off > 0) off = off * 0.25;
+      off = Math.max(-ACT, Math.min(0, off));
+      cur = off; front.style.transform = "translateX(" + off + "px)";
+    }, { passive: false });
+    function end() {
+      if (!active) return; active = false;
+      front.style.transition = "transform .22s ease";
+      if (cur < -ACT / 2) { el.__swipeOpen = true; front.style.transform = "translateX(-" + ACT + "px)"; }
+      else { el.__swipeOpen = false; front.style.transform = "translateX(0)"; if (window.__openSwipe === el) window.__openSwipe = null; }
+      if (Math.abs(cur) > 8) el.__suppressClick = true;
+    }
+    el.addEventListener("pointerup", end);
+    el.addEventListener("pointercancel", end);
+  }
+  function closeSwipe(el) {
+    if (!el) return;
+    var f = el.querySelector(".swipe-front");
+    if (f) { f.style.transition = "transform .22s ease"; f.style.transform = "translateX(0)"; }
+    el.__swipeOpen = false;
+    if (window.__openSwipe === el) window.__openSwipe = null;
   }
 
   // ---- note ops ----
@@ -1243,10 +1314,13 @@
     }
     haptic(); save(LS.notes, notes); closeNote(); render(); toast("已保存");
   }
+  function deleteNoteById(id) {
+    save(LS.notes, getNotes().filter(function (n) { return n.id !== id; }));
+    haptic(); window.__openSwipe = null; render(); toast("已删除");
+  }
   function deleteNote() {
     if (!state.editingNote) return;
-    save(LS.notes, getNotes().filter(function (n) { return n.id !== state.editingNote; }));
-    closeNote(); render(); toast("已删除");
+    deleteNoteById(state.editingNote); closeNote();
   }
   function closeNote() { document.getElementById("noteMask").classList.remove("show"); notePhoto = null; }
   function buildFolders() {
@@ -1350,7 +1424,7 @@
     if (remind && due) requestNotify();
     toast("已保存");
   }
-  function deleteTodo(id) { save(LS.todos, getTodos().filter(function (t) { return t.id !== id; })); haptic(); render(); }
+  function deleteTodo(id) { save(LS.todos, getTodos().filter(function (t) { return t.id !== id; })); haptic(); window.__openSwipe = null; render(); }
   function toggleTodo(id) {
     var todos = getTodos().map(function (t) { if (t.id === id) { t.done = !t.done; t.updatedAt = Date.now(); } return t; });
     save(LS.todos, todos); render();
