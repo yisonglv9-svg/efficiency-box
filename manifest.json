@@ -1,6 +1,6 @@
 {
-  "name": "效率盒 · 笔记与待办",
-  "short_name": "效率盒",
+  "name": "Meow · 笔记与待办",
+  "short_name": "Meow",
   "description": "离线优先的笔记与待办应用，支持 Markdown、标签、待办提醒。",
   "lang": "zh-CN",
   "start_url": ".",
