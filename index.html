@@ -468,6 +468,8 @@
 
   /* Login / Account */
   #loginMask { z-index: 220; background: rgba(251,244,247,0.85); }
+  .login-close { position: absolute; top: 12px; right: 14px; width: 34px; height: 34px; border: none; background: transparent; color: var(--text-soft); font-size: 20px; cursor: pointer; border-radius: 50%; display: grid; place-items: center; }
+  .login-close:active { background: rgba(0,0,0,.06); }
   .login-card { width: 100%; max-width: 330px; background: var(--glass-strong); border-radius: 24px; padding: 32px 24px 26px; text-align: center; box-shadow: var(--shadow); border: 1px solid var(--border); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); }
   .login-logo { margin: 0 auto 12px; width: 52px; height: 52px; }
   .login-title { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: 1px; margin-bottom: 4px; }
@@ -525,11 +527,12 @@
 </div>
 
 <!-- Login modal -->
-<div class="modal-mask" id="loginMask">
+<div class="modal-mask hidden" id="loginMask">
   <div class="login-card">
+    <button class="login-close" id="loginClose" aria-label="关闭">✕</button>
     <div class="login-logo" id="loginLogo"></div>
     <div class="login-title">Meow</div>
-    <div class="login-sub">本地账号 · 数据独立保存</div>
+    <div class="login-sub">本地账号 · 数据独立保存（可选）</div>
     <div id="loginForm">
       <input class="field" id="loginName" placeholder="用户名（必填）" autocomplete="username" />
       <input class="field" id="loginPin" type="password" placeholder="密码（6-20 位字母或数字）" maxlength="20" autocomplete="current-password" />
@@ -681,7 +684,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "v23";
+  var APP_VERSION = "v24";
   var LS_BASE = { notes: "eff_notes_v2", todos: "eff_todos_v2", settings: "eff_settings_v2", folders: "eff_folders_v1" };
   var LS_ACCT_KEY = "eff_accounts";
   var LS_ACTIVE_KEY = "eff_active_account";
@@ -782,29 +785,22 @@
     setActiveId("");
     refreshLS();
     render();
-    showLogin();
+    toast("已退出，当前为游客模式（数据仍在本机）");
+  }
+  // 打开应用时恢复上次账号；但绝不弹出登录框把用户挡在门外（本地文件/部分浏览器原点易变，强制登录会反复卡死）
+  function restoreSession() {
+    var savedId = getActiveId();
+    if (savedId) {
+      var found = getAccounts().find(function (a) { return a.id === savedId; });
+      if (found) { currentAccountId = savedId; refreshLS(); return; }
+      setActiveId("");
+    }
+    // 无账号 / 多账号 / 账号丢失：一律直接以游客进入，不弹登录
+    currentAccountId = ""; refreshLS();
   }
   function getCurrentAccount() {
     if (!currentAccountId) return null;
     return getAccounts().find(function (a) { return a.id === currentAccountId; }) || null;
-  }
-  function checkLoginState() {
-    var savedId = getActiveId();
-    if (savedId) {
-      var accts = getAccounts();
-      var found = accts.find(function (a) { return a.id === savedId; });
-      if (found) { currentAccountId = savedId; refreshLS(); return true; }
-      setActiveId("");
-    }
-    var all = getAccounts();
-    if (all.length === 1) {
-      currentAccountId = all[0].id; setActiveId(all[0].id); refreshLS();
-      return true;
-    }
-    if (all.length > 1) return false; // 多账号：让用户选择登录
-    // 0 账号：游客模式直接进入，不再强制登录把用户挡在门外（本地文件原点易变，强制登录会反复卡死）
-    currentAccountId = ""; refreshLS();
-    return true;
   }
   function showLogin() {
     document.getElementById("loginMask").classList.remove("hidden");
@@ -1130,15 +1126,23 @@
     var installed = isInstalled();
     var acct = getCurrentAccount();
     var html = "";
+    // 账号为可选功能：有则用账号隔离数据，无则游客模式。两者都不弹登录框、不阻塞使用
+    html += '<div class="data-card" style="margin-bottom:14px">';
+    html += '<div class="dc-ic">' + icon("user") + "</div>";
     if (acct) {
-      html += '<div class="data-card" style="margin-bottom:14px">';
-      html += '<div class="dc-ic">' + icon("user") + "</div>";
       html += '<div class="dc-body"><div class="dc-title">当前账号</div>';
-      html += '<div class="dc-desc">你好，<b>' + escapeHtml(acct.name) + '</b> · 你的数据独立保存，互不影响</div></div>';
+      html += '<div class="dc-desc">你好，<b>' + escapeHtml(acct.name) + '</b> · 数据独立保存，互不影响</div></div>';
       html += '</div>';
       html += '<div class="dc-actions" style="margin-bottom:16px">';
       html += '<button class="dc-btn" id="acctSwitch">' + icon("more") + " 切换账号</button>";
       html += '<button class="dc-btn" id="acctLogout">' + icon("close") + " 退出登录</button>";
+      html += '</div>';
+    } else {
+      html += '<div class="dc-body"><div class="dc-title">游客模式（默认）</div>';
+      html += '<div class="dc-desc">直接用，无需登录。如需与他人共用本机并隔离数据，可创建账号。</div></div>';
+      html += '</div>';
+      html += '<div class="dc-actions" style="margin-bottom:16px">';
+      html += '<button class="dc-btn primary" id="acctCreate">' + icon("user") + " 创建 / 切换账号（可选）</button>";
       html += '</div>';
     }
     html += '<div class="data-card">';
@@ -1162,7 +1166,7 @@
     html += setItem(icon("trash"), "清空数据", "删除全部笔记和待办", "clear");
     html += "</div>";
     html += '<div class="set-list">';
-    html += setItem(icon("info"), "关于Meow", "单文件离线应用 · v7.0", "about");
+    html += setItem(icon("info"), "关于Meow", "单文件离线应用 · " + APP_VERSION, "about");
     html += "</div>";
     listView().innerHTML = html;
     var acts = {
@@ -1181,8 +1185,9 @@
     });
     var dcB = document.getElementById("dcBackup"); if (dcB) dcB.onclick = function () { exportData(); };
     var dcI = document.getElementById("dcInstall"); if (dcI) dcI.onclick = function () { showInstallOptions(); };
-    var acSw = document.getElementById("acctSwitch"); if (acSw) acSw.onclick = function () { doLogout(); };
+    var acSw = document.getElementById("acctSwitch"); if (acSw) acSw.onclick = function () { showLogin(); };
     var acLo = document.getElementById("acctLogout"); if (acLo) acLo.onclick = function () { doLogout(); };
+    var acCr = document.getElementById("acctCreate"); if (acCr) acCr.onclick = function () { showLogin(); };
   }
   function setItem(ic, k, v, act) {
     return '<div class="set-item" data-act="' + act + '"><div class="si">' + ic + '</div><div class="st"><div class="k">' + k + '</div><div class="v">' + v + '</div></div><div class="ar">›</div></div>';
@@ -1890,8 +1895,13 @@
   window.__openTodo = function () { openTodo(null); };
 
   function init() {
-    // ---- Account gate ----
-    if (!checkLoginState()) { showLogin(); }
+    // 探测 localStorage 是否可用（部分浏览器把本地文件加到桌面后存储会被禁/不持久）
+    try { localStorage.setItem("__meow_probe", "1"); localStorage.removeItem("__meow_probe"); }
+    catch (e) {
+      setTimeout(function () { toast("当前浏览器无法保存数据，请用 Chrome 打开本地文件"); }, 900);
+    }
+    // 直接打开应用，恢复上次账号但不弹登录框（登录为可选功能，见设置页）
+    restoreSession();
     document.getElementById("loginBtn").onclick = function () {
       var n = document.getElementById("loginName").value.trim();
       var p = document.getElementById("loginPin").value;
@@ -1914,6 +1924,10 @@
       document.getElementById("registerForm").classList.add("hidden");
       document.getElementById("loginForm").classList.remove("hidden");
     };
+    // 登录弹窗为可选功能：可随时关闭，关闭后仍为游客模式直接使用
+    var loginCloseEl = document.getElementById("loginClose");
+    if (loginCloseEl) loginCloseEl.onclick = function () { hideLogin(); };
+    document.getElementById("loginMask").addEventListener("click", function (e) { if (e.target === this) hideLogin(); });
     // Allow Enter on reg fields
     ["regPin", "regPin2"].forEach(function (id) {
       document.getElementById(id).addEventListener("keydown", function (e) { if (e.key === "Enter") document.getElementById("regBtn").click(); });
