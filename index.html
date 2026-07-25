@@ -680,7 +680,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "v7.0";
+  var APP_VERSION = "v21";
   var LS_BASE = { notes: "eff_notes_v2", todos: "eff_todos_v2", settings: "eff_settings_v2", folders: "eff_folders_v1" };
   var LS_ACCT_KEY = "eff_accounts";
   var LS_ACTIVE_KEY = "eff_active_account";
@@ -794,6 +794,13 @@
       var found = accts.find(function (a) { return a.id === savedId; });
       if (found) { currentAccountId = savedId; refreshLS(); return true; }
       setActiveId("");
+    }
+    // Convenience: on a personal device with a single local account, keep the user signed in
+    // (handles cases where the browser storage origin resets between opens, e.g. content:// URIs).
+    var all = getAccounts();
+    if (all.length === 1) {
+      currentAccountId = all[0].id; setActiveId(all[0].id); refreshLS();
+      return true;
     }
     // Legacy: if user already has data without accounts, auto-migrate
     var hasLegacyNotes = !!localStorage.getItem(LS_BASE.notes);
@@ -1766,9 +1773,10 @@
   // ---- pull to refresh + swipe ----
   var mainEl = document.getElementById("mainView");
   var ptr = document.getElementById("ptr");
-  var tStartX = 0, tStartY = 0, tActive = false, ptrPull = 0;
+  var tStartX = 0, tStartY = 0, tActive = false, ptrPull = 0, tOnSwipeCard = false;
   mainEl.addEventListener("touchstart", function (e) {
     if (mainEl.scrollTop <= 0) { tStartX = e.touches[0].clientX; tStartY = e.touches[0].clientY; tActive = true; }
+    tOnSwipeCard = !!(e.target && e.target.closest && e.target.closest(".swipe"));
   }, { passive: true });
   mainEl.addEventListener("touchmove", function (e) {
     if (!tActive || state.view === "today") return;
@@ -1788,7 +1796,7 @@
     ptr.style.height = "0px"; ptr.classList.remove("ready");
     if (ptrPull >= 60) { ptr.classList.add("spin"); render(); setTimeout(function () { ptr.classList.remove("spin"); }, 500); toast("已刷新"); }
     ptrPull = 0;
-    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5 && mainEl.scrollTop <= 0) {
+    if (!tOnSwipeCard && Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5 && mainEl.scrollTop <= 0) {
       var i = ORDER.indexOf(state.view);
       if (dx < 0 && i < ORDER.length - 1) navigate(ORDER[i + 1]);
       else if (dx > 0 && i > 0) navigate(ORDER[i - 1]);
