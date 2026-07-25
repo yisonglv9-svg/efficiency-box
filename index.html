@@ -211,6 +211,7 @@
   /* Swipe to delete (mobile gesture) */
   .swipe { overflow: hidden; }
   .swipe-front { position: relative; z-index: 1; transition: transform .22s ease; will-change: transform; touch-action: pan-y; }
+  .swipe { touch-action: pan-y; overscroll-behavior-x: contain; }
   .card .swipe-front, .todo-item .swipe-front { background: var(--glass); }
   .swipe-action { position: absolute; top: 0; right: 0; bottom: 0; width: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; background: var(--danger); color: #fff; z-index: 0; border-radius: 0 var(--radius) var(--radius) 0; }
   .swipe-action .sa-ic { font-size: 18px; line-height: 1; }
@@ -680,7 +681,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "v21";
+  var APP_VERSION = "v22";
   var LS_BASE = { notes: "eff_notes_v2", todos: "eff_todos_v2", settings: "eff_settings_v2", folders: "eff_folders_v1" };
   var LS_ACCT_KEY = "eff_accounts";
   var LS_ACTIVE_KEY = "eff_active_account";
@@ -1214,6 +1215,8 @@
     });
     Array.prototype.forEach.call(document.querySelectorAll(".todo-item[data-id]"), function (el) {
       var id = el.getAttribute("data-id");
+      // 触摸设备禁用原生 draggable，避免它抢占滑动手势（拖拽排序是桌面增强）
+      if (window.matchMedia && window.matchMedia("(pointer: coarse)").matches) { try { el.draggable = false; } catch (e) {} }
       el.querySelector(".todo-check").onclick = function (e) { e.stopPropagation(); haptic(12); toggleTodo(id); };
       el.querySelector(".todo-del").onclick = function (e) { e.stopPropagation(); haptic(); deleteTodo(id); };
       el.onclick = function () {
@@ -1775,8 +1778,9 @@
   var ptr = document.getElementById("ptr");
   var tStartX = 0, tStartY = 0, tActive = false, ptrPull = 0, tOnSwipeCard = false;
   mainEl.addEventListener("touchstart", function (e) {
+    if (e.target && e.target.closest && e.target.closest(".swipe")) { tActive = false; tOnSwipeCard = true; return; } // 卡片上不启用切标签/下拉手势
     if (mainEl.scrollTop <= 0) { tStartX = e.touches[0].clientX; tStartY = e.touches[0].clientY; tActive = true; }
-    tOnSwipeCard = !!(e.target && e.target.closest && e.target.closest(".swipe"));
+    tOnSwipeCard = false;
   }, { passive: true });
   mainEl.addEventListener("touchmove", function (e) {
     if (!tActive || state.view === "today") return;
