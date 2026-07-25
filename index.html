@@ -684,7 +684,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "v24";
+  var APP_VERSION = "v25";
   var LS_BASE = { notes: "eff_notes_v2", todos: "eff_todos_v2", settings: "eff_settings_v2", folders: "eff_folders_v1" };
   var LS_ACCT_KEY = "eff_accounts";
   var LS_ACTIVE_KEY = "eff_active_account";
@@ -1711,12 +1711,13 @@
     r.onload = function () {
       try {
         var d = JSON.parse(r.result);
-        if (d.notes) save(LS.notes, d.notes);
-        if (d.todos) save(LS.todos, d.todos);
-        if (d.settings) setSettings(d.settings);
+        // 先把账号与当前账号切换好、刷新存储 key，再写数据——否则笔记/待办会写进旧账号的 key 而“消失”
         if (d.accounts) saveAccounts(d.accounts);
         if (typeof d.activeId === "string" && d.activeId) { setActiveId(d.activeId); currentAccountId = d.activeId; }
         refreshLS();
+        if (d.notes) save(LS.notes, d.notes);
+        if (d.todos) save(LS.todos, d.todos);
+        if (d.settings) setSettings(d.settings);
         applyTheme(); render(); toast("导入成功，账号已恢复");
       } catch (e) { toast("文件格式不正确"); }
     };
