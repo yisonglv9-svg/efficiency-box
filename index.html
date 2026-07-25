@@ -681,7 +681,7 @@
 <script>
 (function () {
   "use strict";
-  var APP_VERSION = "v22";
+  var APP_VERSION = "v23";
   var LS_BASE = { notes: "eff_notes_v2", todos: "eff_todos_v2", settings: "eff_settings_v2", folders: "eff_folders_v1" };
   var LS_ACCT_KEY = "eff_accounts";
   var LS_ACTIVE_KEY = "eff_active_account";
@@ -796,22 +796,15 @@
       if (found) { currentAccountId = savedId; refreshLS(); return true; }
       setActiveId("");
     }
-    // Convenience: on a personal device with a single local account, keep the user signed in
-    // (handles cases where the browser storage origin resets between opens, e.g. content:// URIs).
     var all = getAccounts();
     if (all.length === 1) {
       currentAccountId = all[0].id; setActiveId(all[0].id); refreshLS();
       return true;
     }
-    // Legacy: if user already has data without accounts, auto-migrate
-    var hasLegacyNotes = !!localStorage.getItem(LS_BASE.notes);
-    var hasLegacyTodos = !!localStorage.getItem(LS_BASE.todos);
-    if (hasLegacyNotes || hasLegacyTodos) {
-      currentAccountId = "";
-      refreshLS();
-      return true; // let legacy user in without login
-    }
-    return false;
+    if (all.length > 1) return false; // 多账号：让用户选择登录
+    // 0 账号：游客模式直接进入，不再强制登录把用户挡在门外（本地文件原点易变，强制登录会反复卡死）
+    currentAccountId = ""; refreshLS();
+    return true;
   }
   function showLogin() {
     document.getElementById("loginMask").classList.remove("hidden");
@@ -1701,7 +1694,7 @@
 
   // ---- data ----
   function exportData() {
-    var data = { notes: getNotes(), todos: getTodos(), settings: getSettings(), exportedAt: Date.now() };
+    var data = { notes: getNotes(), todos: getTodos(), settings: getSettings(), accounts: getAccounts(), activeId: getActiveId(), exportedAt: Date.now() };
     var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
@@ -1716,7 +1709,10 @@
         if (d.notes) save(LS.notes, d.notes);
         if (d.todos) save(LS.todos, d.todos);
         if (d.settings) setSettings(d.settings);
-        applyTheme(); render(); toast("导入成功");
+        if (d.accounts) saveAccounts(d.accounts);
+        if (typeof d.activeId === "string" && d.activeId) { setActiveId(d.activeId); currentAccountId = d.activeId; }
+        refreshLS();
+        applyTheme(); render(); toast("导入成功，账号已恢复");
       } catch (e) { toast("文件格式不正确"); }
     };
     r.readAsText(file);
