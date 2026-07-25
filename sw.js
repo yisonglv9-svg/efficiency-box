@@ -1,5 +1,5 @@
 // Meow Service Worker — 应用壳离线缓存
-const CACHE = "effbox-v22";
+const CACHE = "effbox-v23";
 const SHELL = [
   ".",
   "index.html",
